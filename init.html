@@ -5,12 +5,26 @@
   <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
 
+  <!-- optional cute font -->
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+
   <style>
+    :root {
+      /* your brand palette */
+      --brand-pink: #ef779f;
+      --brand-blue: #36a8de;
+      --brand-green: #3db489;
+      --brand-yellow: #f8c964;
+      --brand-orange: #f47948;
+    }
+
     body {
       margin: 0;
       padding: 0;
       background: transparent;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-family: 'Poppins', sans-serif;
+      color: #333;
     }
 
     #fr-events-calendar {
@@ -22,29 +36,79 @@
       height: 100%;
     }
 
-    /* Make event cells flex so images look nice */
-    .fc-daygrid-event {
-      white-space: normal;
-      border-radius: 6px;
-      overflow: hidden;
-      padding: 0;
+    /* soften day backgrounds and remove hard grid lines */
+    .fc-daygrid-day-frame {
+      min-height: 130px;
+      background-color: #fffdf7;
+      border: none;
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05);
+      border-radius: 8px;
+      padding: 2px;
     }
 
+    .fc-scrollgrid {
+      border: none;
+    }
+
+    /* style the day numbers */
+    .fc-daygrid-day-number {
+      font-weight: 600;
+      color: var(--brand-green);
+      margin: 2px;
+    }
+
+    /* allow events to expand to show images */
+    .fc-daygrid-day-events {
+      max-height: none !important;
+    }
+
+    .fc-daygrid-event-harness {
+      height: auto !important;
+      margin-bottom: 4px;
+    }
+
+    .fc-daygrid-event {
+      height: auto !important;
+      white-space: normal;
+      padding: 0;
+      overflow: hidden;
+      border-radius: 12px;
+      box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+      transition: transform 0.2s;
+    }
+
+    /* lift events on hover */
+    .fc-daygrid-event:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+    }
+
+    /* card layout */
     .fr-event-card {
       display: flex;
       flex-direction: column;
-      gap: 4px;
       font-size: 11px;
+      height: 100%;
+      color: #fff;
     }
 
     .fr-event-card img {
       width: 100%;
+      height: 70px;
+      object-fit: cover;
       display: block;
-      border-bottom: 1px solid rgba(0,0,0,0.08);
     }
 
     .fr-event-title {
-      padding: 4px 6px;
+      padding: 6px;
+      font-weight: 600;
+      font-size: 12px;
+    }
+
+    .fr-event-time {
+      padding: 0 6px 6px;
+      font-size: 10px;
+      opacity: 0.9;
     }
   </style>
 </head>
@@ -55,6 +119,7 @@
     document.addEventListener('DOMContentLoaded', async function () {
       const calendarEl = document.getElementById('fr-events-calendar');
 
+      // fetch events from GitHub
       let events = [];
       try {
         const res = await fetch('https://raw.githubusercontent.com/Novakukla/FloridaRAMA-Calendar/refs/heads/main/events.json');
@@ -62,6 +127,15 @@
       } catch (err) {
         console.error('Error loading events.json', err);
       }
+
+      // prepare color palette for event cards
+      const palette = [
+        getComputedStyle(document.documentElement).getPropertyValue('--brand-pink').trim(),
+        getComputedStyle(document.documentElement).getPropertyValue('--brand-blue').trim(),
+        getComputedStyle(document.documentElement).getPropertyValue('--brand-green').trim(),
+        getComputedStyle(document.documentElement).getPropertyValue('--brand-yellow').trim(),
+        getComputedStyle(document.documentElement).getPropertyValue('--brand-orange').trim()
+      ];
 
       const calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'dayGridMonth',
@@ -79,9 +153,18 @@
           const props = info.event.extendedProps;
           const thumbnail = props.thumbnail;
           const title = info.event.title;
+          const start = info.event.start;
+          const timeStr = start ? start.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '';
+
+          // pick a color based on event index to vary cards
+          const color = palette[info.event.extendedProps.colorIndex ??
+                                (info.event._def && info.event._def.publicId ?
+                                  parseInt(info.event._def.publicId, 36) % palette.length :
+                                  Math.floor(Math.random() * palette.length))];
 
           const container = document.createElement('div');
           container.className = 'fr-event-card';
+          container.style.background = `linear-gradient(135deg, ${color} 0%, ${color} 80%, rgba(255,255,255,0.15) 100%)`;
 
           if (thumbnail) {
             const img = document.createElement('img');
@@ -94,6 +177,13 @@
           titleEl.className = 'fr-event-title';
           titleEl.textContent = title;
           container.appendChild(titleEl);
+
+          if (timeStr) {
+            const timeEl = document.createElement('div');
+            timeEl.className = 'fr-event-time';
+            timeEl.textContent = timeStr;
+            container.appendChild(timeEl);
+          }
 
           return { domNodes: [container] };
         }
