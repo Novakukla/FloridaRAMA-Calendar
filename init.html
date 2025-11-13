@@ -1,21 +1,106 @@
 <!DOCTYPE html>
-<html lang='en'>
-  <head>
-    <meta charset='utf-8' />
-    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.19/index.global.min.js'></script>
-    <script>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
 
-      document.addEventListener('DOMContentLoaded', function() {
-        var calendarEl = document.getElementById('calendar');
-        var calendar = new FullCalendar.Calendar(calendarEl, {
-          initialView: 'dayGridMonth'
-        });
-        calendar.render();
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: transparent;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    #fr-events-calendar {
+      max-width: 100%;
+      margin: 0 auto;
+    }
+
+    html, body, #fr-events-calendar {
+      height: 100%;
+    }
+
+    /* Make event cells flex so images look nice */
+    .fc-daygrid-event {
+      white-space: normal;
+      border-radius: 6px;
+      overflow: hidden;
+      padding: 0;
+    }
+
+    .fr-event-card {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 11px;
+    }
+
+    .fr-event-card img {
+      width: 100%;
+      display: block;
+      border-bottom: 1px solid rgba(0,0,0,0.08);
+    }
+
+    .fr-event-title {
+      padding: 4px 6px;
+    }
+  </style>
+</head>
+<body>
+  <div id="fr-events-calendar"></div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', async function () {
+      const calendarEl = document.getElementById('fr-events-calendar');
+
+      let events = [];
+      try {
+        const res = await fetch('https://raw.githubusercontent.com/Novakukla/FloridaRAMA-Calendar/refs/heads/main/events.json');
+        events = await res.json();
+      } catch (err) {
+        console.error('Error loading events.json', err);
+      }
+
+      const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        height: 'auto',
+        events: events,
+
+        eventClick: function(info) {
+          if (info.event.url) {
+            window.open(info.event.url, '_blank');
+            info.jsEvent.preventDefault();
+          }
+        },
+
+        eventContent: function(info) {
+          const props = info.event.extendedProps;
+          const thumbnail = props.thumbnail;
+          const title = info.event.title;
+
+          const container = document.createElement('div');
+          container.className = 'fr-event-card';
+
+          if (thumbnail) {
+            const img = document.createElement('img');
+            img.src = thumbnail;
+            img.alt = title;
+            container.appendChild(img);
+          }
+
+          const titleEl = document.createElement('div');
+          titleEl.className = 'fr-event-title';
+          titleEl.textContent = title;
+          container.appendChild(titleEl);
+
+          return { domNodes: [container] };
+        }
       });
 
-    </script>
-  </head>
-  <body>
-    <div id='calendar'></div>
-  </body>
+      calendar.render();
+    });
+  </script>
+</body>
 </html>
