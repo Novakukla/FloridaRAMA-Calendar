@@ -110,6 +110,47 @@
       font-size: 10px;
       opacity: 0.9;
     }
+
+    /* Mobile: thumbnail-only cards */
+    @media (max-width: 600px) {
+      /* make day cells flexible; no forced tall strips */
+      .fc-daygrid-day-frame {
+        min-height: auto;
+        padding: 2px;
+      }
+
+      .fc-daygrid-day-events {
+        max-height: none !important;
+      }
+
+      .fc-daygrid-event-harness {
+        height: auto !important;
+      }
+
+      .fc-daygrid-event {
+        height: auto !important;
+      }
+
+      /* hide text on mobile */
+      .fr-event-title,
+      .fr-event-time {
+        display: none;
+      }
+
+      /* make the card a square thumbnail */
+      .fr-event-card {
+        aspect-ratio: 1 / 1;
+        padding: 0;
+      }
+
+      .fr-event-card img {
+        width: 100%;
+        height: 100%;
+        max-height: none;
+        object-fit: cover;
+        display: block;
+      }
+    }
   </style>
 </head>
 <body>
@@ -119,7 +160,6 @@
     document.addEventListener('DOMContentLoaded', async function () {
       const calendarEl = document.getElementById('fr-events-calendar');
 
-      // fetch events from GitHub
       let events = [];
       try {
         const res = await fetch('https://raw.githubusercontent.com/Novakukla/FloridaRAMA-Calendar/refs/heads/main/events.json');
@@ -127,15 +167,6 @@
       } catch (err) {
         console.error('Error loading events.json', err);
       }
-
-      // prepare color palette for event cards
-      const palette = [
-        getComputedStyle(document.documentElement).getPropertyValue('--brand-pink').trim(),
-        getComputedStyle(document.documentElement).getPropertyValue('--brand-blue').trim(),
-        getComputedStyle(document.documentElement).getPropertyValue('--brand-green').trim(),
-        getComputedStyle(document.documentElement).getPropertyValue('--brand-yellow').trim(),
-        getComputedStyle(document.documentElement).getPropertyValue('--brand-orange').trim()
-      ];
 
       const calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'dayGridMonth',
@@ -154,13 +185,18 @@
           const thumbnail = props.thumbnail;
           const title = info.event.title;
           const start = info.event.start;
-          const timeStr = start ? start.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '';
+          const timeStr = start
+            ? start.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+            : '';
 
-          // pick a color based on event index to vary cards
-          const color = palette[info.event.extendedProps.colorIndex ??
-                                (info.event._def && info.event._def.publicId ?
-                                  parseInt(info.event._def.publicId, 36) % palette.length :
-                                  Math.floor(Math.random() * palette.length))];
+          const palette = [
+            getComputedStyle(document.documentElement).getPropertyValue('--brand-pink').trim(),
+            getComputedStyle(document.documentElement).getPropertyValue('--brand-blue').trim(),
+            getComputedStyle(document.documentElement).getPropertyValue('--brand-green').trim(),
+            getComputedStyle(document.documentElement).getPropertyValue('--brand-yellow').trim(),
+            getComputedStyle(document.documentElement).getPropertyValue('--brand-orange').trim()
+          ];
+          const color = palette[Math.floor(Math.random() * palette.length)];
 
           const container = document.createElement('div');
           container.className = 'fr-event-card';
