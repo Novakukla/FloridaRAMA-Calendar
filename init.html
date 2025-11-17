@@ -1,3 +1,4 @@
+<!-- Nova Kukla | Events Calander -->
 <!DOCTYPE html>
 <html>
 <head>
@@ -5,40 +6,44 @@
   <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
 
-  <!-- optional cute font -->
+  <!-- cute font (close to halau) -->
   <link rel="preconnect" href="https://fonts.gstatic.com">
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700&display=swap" rel="stylesheet">
 
   <style>
-    :root {
-      /* your brand palette */
+    /* ====== root variables | brand palette ====== */
+    :root
+    {
       --brand-pink: #ef779f;
       --brand-blue: #36a8de;
       --brand-green: #3db489;
       --brand-yellow: #f8c964;
       --brand-orange: #f47948;
     }
+    /* -------------------------------------------- */
 
-    body {
+    /* =============== base layout styles =============== */
+    body
+    {
       margin: 0;
       padding: 0;
       background: transparent;
-      font-family: 'Poppins', sans-serif;
+      font-family: 'Baloo 2', sans-serif;
+      font-size: large;
       color: #333;
     }
 
-    #fr-events-calendar {
-      max-width: 100%;
-      margin: 0 auto;
-    }
+    #fr-events-calendar { max-width: 100%; margin: 0 auto; }
 
-    html, body, #fr-events-calendar {
-      height: 100%;
-    }
+    html,
+    body,
+    #fr-events-calendar{ height: 100%; }
+    /* --------------------------------------------------- */
 
-    /* soften day backgrounds and remove hard grid lines */
-    .fc-daygrid-day-frame {
-      min-height: 130px;
+    /* ======= styles for day cells / grid ======= */
+    .fc-daygrid-day-frame
+    {
+      min-height: 130px; /* event frame height */
       background-color: #fffdf7;
       border: none;
       box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05);
@@ -46,28 +51,33 @@
       padding: 2px;
     }
 
-    .fc-scrollgrid {
+    .fc-scrollgrid
+    {
       border: none;
     }
 
-    /* style the day numbers */
-    .fc-daygrid-day-number {
+    .fc-daygrid-day-number
+    {
       font-weight: 600;
       color: var(--brand-green);
       margin: 2px;
     }
+    /* -------------------------------------------- */
 
-    /* allow events to expand to show images */
-    .fc-daygrid-day-events {
+    /* ====== styles for events in the grid ====== */
+    .fc-daygrid-day-events
+    {
       max-height: none !important;
     }
 
-    .fc-daygrid-event-harness {
+    .fc-daygrid-event-harness
+    {
       height: auto !important;
       margin-bottom: 4px;
     }
 
-    .fc-daygrid-event {
+    .fc-daygrid-event
+    {
       height: auto !important;
       white-space: normal;
       padding: 0;
@@ -77,73 +87,96 @@
       transition: transform 0.2s;
     }
 
-    /* lift events on hover */
-    .fc-daygrid-event:hover {
+    .fc-daygrid-event:hover
+    {
       transform: translateY(-2px);
       box-shadow: 0 6px 12px rgba(0,0,0,0.15);
     }
 
-    /* card layout */
-    .fr-event-card {
+    .fc-daygrid-day-events,
+    .fc-daygrid-event-harness,
+    .fc-daygrid-event
+    {
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+      margin: 0;
+    }
+    /* ------------------------------------------ */
+
+    /* == styles for event card content == */
+    .fr-event-card
+    {
       display: flex;
       flex-direction: column;
       font-size: 11px;
-      height: 100%;
       color: #fff;
+      width: 100%;
+      box-sizing: border-box;
+      min-height: 200px; /* adjust */
     }
 
-    .fr-event-card img {
+    .fr-event-card img
+    {
       width: 100%;
-      height: 70px;
+      height: 150px; /* adjust */
       object-fit: cover;
       display: block;
     }
 
-    .fr-event-title {
+    .fr-event-title
+    {
       padding: 6px;
       font-weight: 600;
-      font-size: 12px;
+      font-size: 15px; /* adjust */
     }
 
-    .fr-event-time {
+    .fr-event-time
+    {
       padding: 0 6px 6px;
-      font-size: 10px;
+      font-size: 12px;
       opacity: 0.9;
     }
+    /* ---------------------------------- */
 
-    /* Mobile: thumbnail-only cards */
-    @media (max-width: 600px) {
-      /* make day cells flexible; no forced tall strips */
-      .fc-daygrid-day-frame {
-        min-height: auto;
-        padding: 2px;
-      }
+    /* ================== styles for highlighting today ================== */
+    .fc-day-today .fc-daygrid-day-frame
+    {
+      background: linear-gradient(135deg, rgba(248,201,100,0.35), #fffdf7);
+      box-shadow:
+        0 0 0 2px rgba(248,201,100,0.9),
+        inset 0 0 0 1px rgba(0,0,0,0.06);
+    }
 
-      .fc-daygrid-day-events {
-        max-height: none !important;
-      }
+    .fc-day-today .fc-daygrid-day-number
+    {
+      color: var(--brand-pink);
+      font-weight: 700;
+    }
+    /* ------------------------------------------------------------------- */
 
-      .fc-daygrid-event-harness {
-        height: auto !important;
-      }
+    /* ========== mobile styles: thumbnail-only cards ========== */
+    @media (max-width: 600px)
+    {
+      .fc-daygrid-day-frame { min-height: auto; padding: 2px; }
 
-      .fc-daygrid-event {
-        height: auto !important;
-      }
+      .fc-daygrid-day-events { max-height: none !important; }
 
-      /* hide text on mobile */
-      .fr-event-title,
-      .fr-event-time {
-        display: none;
-      }
+      .fc-daygrid-event-harness { height: auto !important; }
 
-      /* make the card a square thumbnail */
-      .fr-event-card {
+      .fc-daygrid-event { height: auto !important; }
+
+      .fr-event-title, .fr-event-time { display: none; }
+
+      .fr-event-card
+      {
         aspect-ratio: 1 / 1;
         padding: 0;
+        min-height: 0;
       }
 
-      .fr-event-card img {
+      .fr-event-card img
+      {
         width: 100%;
         height: 100%;
         max-height: none;
@@ -151,82 +184,115 @@
         display: block;
       }
     }
+    /* ------------------------------------------------------ */
   </style>
 </head>
+
 <body>
   <div id="fr-events-calendar"></div>
 
   <script>
-    document.addEventListener('DOMContentLoaded', async function () {
+    // ============== data loading and calendar setup ==============
+    document.addEventListener('DOMContentLoaded', async function ()
+    {
       const calendarEl = document.getElementById('fr-events-calendar');
 
+      // array for events loaded from json
       let events = [];
-      try {
+      try
+      {
+        // fetch events json from github
         const res = await fetch('https://raw.githubusercontent.com/Novakukla/FloridaRAMA-Calendar/refs/heads/main/events.json');
         events = await res.json();
-      } catch (err) {
+      }
+      catch (err)
+      {
         console.error('Error loading events.json', err);
       }
 
-      const calendar = new FullCalendar.Calendar(calendarEl, {
+      // create calendar instance
+      const calendar = new FullCalendar.Calendar(calendarEl,
+      {
         initialView: 'dayGridMonth',
         height: 'auto',
         events: events,
 
-        eventClick: function(info) {
-          if (info.event.url) {
+        // open fareharbor or detail url in new tab
+        eventClick: function (info)
+        {
+          if (info.event.url)
+          {
             window.open(info.event.url, '_blank');
             info.jsEvent.preventDefault();
           }
         },
 
-        eventContent: function(info) {
+        // ===================== custom rendering for event cards =====================
+        eventContent: function (info)
+        {
           const props = info.event.extendedProps;
           const thumbnail = props.thumbnail;
           const title = info.event.title;
           const start = info.event.start;
+
+          // format time as h:mm am/pm
           const timeStr = start
             ? start.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
             : '';
 
-          const palette = [
+          // build color palette from css custom properties
+          const palette =
+          [
             getComputedStyle(document.documentElement).getPropertyValue('--brand-pink').trim(),
             getComputedStyle(document.documentElement).getPropertyValue('--brand-blue').trim(),
             getComputedStyle(document.documentElement).getPropertyValue('--brand-green').trim(),
             getComputedStyle(document.documentElement).getPropertyValue('--brand-yellow').trim(),
             getComputedStyle(document.documentElement).getPropertyValue('--brand-orange').trim()
           ];
+
+          // pick random brand color for this card
           const color = palette[Math.floor(Math.random() * palette.length)];
 
+          // create card container
           const container = document.createElement('div');
           container.className = 'fr-event-card';
-          container.style.background = `linear-gradient(135deg, ${color} 0%, ${color} 80%, rgba(255,255,255,0.15) 100%)`;
+          container.style.background =
+            `linear-gradient(135deg, ${color} 0%, ${color} 80%, rgba(255,255,255,0.15) 100%)`;
 
-          if (thumbnail) {
+          // add thumbnail if present
+          if (thumbnail)
+          {
             const img = document.createElement('img');
             img.src = thumbnail;
             img.alt = title;
             container.appendChild(img);
           }
 
+          // add title text
           const titleEl = document.createElement('div');
           titleEl.className = 'fr-event-title';
           titleEl.textContent = title;
           container.appendChild(titleEl);
 
-          if (timeStr) {
+          // add time text if available
+          if (timeStr)
+          {
             const timeEl = document.createElement('div');
             timeEl.className = 'fr-event-time';
             timeEl.textContent = timeStr;
             container.appendChild(timeEl);
           }
 
+          // return dom nodes for fullcalendar to render
           return { domNodes: [container] };
         }
+        // ----------------------------------------------------------------------------
       });
 
+      // render calendar into dom
       calendar.render();
     });
+    // -------------------------------------------------------------
   </script>
 </body>
 </html>
