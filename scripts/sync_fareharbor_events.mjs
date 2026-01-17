@@ -237,15 +237,87 @@ function parseDateLabelToYmd(dateLabel) {
 }
 
 function parseEventTimeRange(html) {
-	// Look for "Event is 10AM - 12PM" (minutes optional)
-	const m = html.match(
-		/Event\s+is\s+(\d{1,2})(?::(\d{2}))?\s*(AM|PM)\s*[-–—]\s*(\d{1,2})(?::(\d{2}))?\s*(AM|PM)/i
-	);
+	const text = String(html || "")
+		.replaceAll(/\u00A0/g, " ")
+		.replaceAll(/\s+/g, " ")
+		.trim();
+	if (!text) return null;
+
+	const normAp = (ap) => {
+		if (!ap) return null;
+		const s = String(ap).toUpperCase().replaceAll(".", "");
+		if (s === "AM" || s === "PM") return s;
+		return null;
+	};
+
+	// Match common time-range formats anywhere in the page text:
+	// - "Event is 10AM - 12PM"
+	// - "6pm–10pm", "6 PM to 10 PM", "6-10PM", "6:00PM - 10:00PM"
+	// Notes:
+	// - At least one side must include AM/PM; if one side omits it, infer from the other.
+	const rangeRe =
+		/(?:\bEvent\s+is\b|\bHours\b|\bTime\b|\bWhen\b|\bSchedule\b|\bDuration\b)?[^\d]{0,20}(\d{1,2})(?::(\d{2}))?\s*(A\.?M\.?|P\.?M\.?|AM|PM)?\s*(?:-|–|—|to)\s*(\d{1,2})(?::(\d{2}))?\s*(A\.?M\.?|P\.?M\.?|AM|PM)?/i;
+
+	const m = text.match(rangeRe);
 	if (!m) return null;
-	const [, sh, sm, sap, eh, em, eap] = m;
+	const [, sh, sm, sapRaw, eh, em, eapRaw] = m;
+	let sap = normAp(sapRaw);
+	let eap = normAp(eapRaw);
+
+	// Infer AM/PM if one side omits it.
+	if (!sap && eap) sap = eap;
+	if (!eap && sap) eap = sap;
+
+	// If neither has AM/PM, ignore (too ambiguous).
+	if (!sap || !eap) return null;
+
 	return {
-		start: { h: Number(sh), m: Number(sm || "0"), ap: sap.toUpperCase() },
-		end: { h: Number(eh), m: Number(em || "0"), ap: eap.toUpperCase() },
+		start: { h: Number(sh), m: Number(sm || "0"), ap: sap },
+		end: { h: Number(eh), m: Number(em || "0"), ap: eap },
+	};
+}
+
+function parseStartTimeAndDuration(text) {
+	const t = String(text || "")
+		.replaceAll(/\u00A0/g, " ")
+		.replaceAll(/\s+/g, " ")
+		.trim();
+	if (!t) return null;
+
+	const normAp = (ap) => {
+		if (!ap) return null;
+		const s = String(ap).toUpperCase().replaceAll(".", "");
+		if (s === "AM" || s === "PM") return s;
+		return null;
+	};
+
+	// Example from FareHarbor: "6:00 PM" and "2 Hours • Ages 13+"
+	const startM = t.match(/\b(\d{1,2})(?::(\d{2}))?\s*(A\.?M\.?|P\.?M\.?|AM|PM)\b/i);
+	if (!startM) return null;
+	const sh = Number(startM[1]);
+	const sm = Number(startM[2] || "0");
+	const sap = normAp(startM[3]);
+	if (!sap) return null;
+
+	let durationMinutes = 0;
+	const hoursM = t.match(/\b(\d+(?:\.\d+)?)\s*Hours?\b/i);
+	if (hoursM) durationMinutes += Math.round(Number(hoursM[1]) * 60);
+	const minsM = t.match(/\b(\d{1,3})\s*Minutes?\b/i);
+	if (minsM) durationMinutes += Number(minsM[1]);
+
+	if (!durationMinutes || !Number.isFinite(durationMinutes)) return null;
+
+	const start24 = to24Hour({ h: sh, m: sm, ap: sap });
+	const startTotal = start24.hour * 60 + start24.minute;
+	const endTotal = (startTotal + durationMinutes) % (24 * 60);
+	const endHour24 = Math.floor(endTotal / 60);
+	const endMinute = endTotal % 60;
+	const endAp = endHour24 >= 12 ? "PM" : "AM";
+	const endHour12 = ((endHour24 + 11) % 12) + 1;
+
+	return {
+		start: { h: sh, m: sm, ap: sap },
+		end: { h: endHour12, m: endMinute, ap: endAp },
 	};
 }
 
@@ -301,7 +373,9 @@ async function getItemUrlsFromListing(listingUrl) {
 		.map(normalizeFareharborUrl)
 		.filter((u) => u.includes(`/embeds/book/${COMPANY}/items/`));
 
-	if (itemUrls.length > 0 && !USE_PLAYWRIGHT) {
+	// If static HTML already contains item URLs, prefer that.
+	// It avoids occasional Playwright listing-page flakiness and is usually sufficient.
+	if (itemUrls.length > 0) {
 		return { itemUrls: [...new Set(itemUrls)], usedBrowser: false };
 	}
 
@@ -506,16 +580,42 @@ function isFareharborEvent(e) {
 	}
 }
 
+function itemIdFromFareharborUrl(url) {
+	const m = String(url || "").match(/\/items\/(\d+)\b/i);
+	return m ? m[1] : null;
+}
+
 async function main() {
 	const listingUrl = `https://fareharbor.com/embeds/book/${COMPANY}/items/?flow=${encodeURIComponent(FLOW)}&full-items=yes`;
 	console.log(`Fetching items listing: ${listingUrl}`);
 
-	const { itemUrls, usedBrowser } = await getItemUrlsFromListing(listingUrl);
+	let itemUrls = [];
+	let usedBrowser = false;
+	try {
+		const got = await getItemUrlsFromListing(listingUrl);
+		itemUrls = got.itemUrls;
+		usedBrowser = got.usedBrowser;
+	} catch (err) {
+		console.warn(`Listing scrape failed (${err?.message || err}). Falling back to existing events.json item IDs.`);
+		let existing = [];
+		try {
+			existing = JSON.parse(await fs.readFile(EVENTS_FILE, "utf8"));
+			if (!Array.isArray(existing)) existing = [];
+		} catch {
+			existing = [];
+		}
+		const ids = existing
+			.filter(isFareharborEvent)
+			.map((e) => itemIdFromFareharborUrl(e.url))
+			.filter(Boolean);
+		itemUrls = [...new Set(ids)].map(
+			(id) => `https://fareharbor.com/embeds/book/${COMPANY}/items/${id}/?full-items=yes&flow=${encodeURIComponent(FLOW)}`
+		);
+		usedBrowser = false;
+	}
+
 	const uniqueItemUrls = itemUrls.slice(0, 50);
 	console.log(`Found ${uniqueItemUrls.length} item link(s).${usedBrowser ? " (via browser render)" : ""}`);
-
-	// If the listing required browser rendering, item pages often do too.
-	const USE_ITEM_BROWSER_FALLBACK = USE_PLAYWRIGHT || usedBrowser;
 
 	let keep = [];
 	if (MERGE_EXISTING) {
@@ -533,7 +633,7 @@ async function main() {
 	}
 	const scraped = [];
 
-	const processItems = async (context) => {
+	const processItems = async () => {
 		for (let i = 0; i < uniqueItemUrls.length; i++) {
 			const itemUrl = uniqueItemUrls[i];
 			console.log(`\n[${i + 1}/${uniqueItemUrls.length}] Fetching item: ${itemUrl}`);
@@ -550,15 +650,21 @@ async function main() {
 			let thumbnail = extractBestImageFromHtml(html, itemUrl);
 			let prices = parsePricesForAnchor(html);
 			let bodyText = html;
+			let trFromText = parseEventTimeRange(bodyText || "") || parseStartTimeAndDuration(bodyText || "");
 
-			// If availability isn't present in static HTML, fall back to Playwright for this item.
-			if (!prices && context) {
+			// If we can't read availability and/or can't extract a time from static HTML,
+			// fall back to Playwright for this item to read rendered text.
+			// Use a fresh browser per item so a crash doesn't poison the whole run.
+			if ((!prices || !trFromText) && USE_PLAYWRIGHT) {
 				let dom;
 				try {
-					dom = await scrapeItemViaPlaywright(context, itemUrl);
+					dom = await withPlaywright(async ({ context }) => {
+						return await scrapeItemViaPlaywright(context, itemUrl);
+					});
 				} catch (err) {
 					console.warn(`  Skipping (browser fallback failed): ${err?.message || err}`);
-					continue;
+					// If we already have availability from static HTML, keep going with defaults.
+					if (!prices) continue;
 				}
 
 				if (dom?.title) title = dom.title;
@@ -567,6 +673,7 @@ async function main() {
 					prices = { availabilityUrl: dom.availabilityUrl, dateLabel: dom.dateLabel };
 				}
 				if (dom?.bodyText) bodyText = dom.bodyText;
+				trFromText = parseEventTimeRange(bodyText || "") || parseStartTimeAndDuration(bodyText || "");
 			}
 
 			if (!prices) {
@@ -580,7 +687,7 @@ async function main() {
 				continue;
 			}
 
-			const tr = parseEventTimeRange(bodyText || "");
+			const tr = trFromText;
 			let startIso;
 			let endIso;
 			if (tr) {
@@ -606,13 +713,7 @@ async function main() {
 		}
 	};
 
-	if (USE_ITEM_BROWSER_FALLBACK) {
-		await withPlaywright(async ({ context }) => {
-			await processItems(context);
-		});
-	} else {
-		await processItems(null);
-	}
+	await processItems();
 
 	// Remove undefined fields and obvious duplicates
 	const byKey = new Map();

@@ -208,12 +208,9 @@
 
       setDebug('Loading calendar…');
 
-      // You can override the source by adding ?events=<raw_json_url> to the iframe src.
       const urlParams = new URLSearchParams(window.location.search);
       const eventsOverride = urlParams.get('events');
 
-      // If init.html and events.json are hosted side-by-side, this works without hardcoding the repo.
-      // NOTE: file:// pages typically cannot fetch file://events.json, so skip this candidate for local double-click testing.
       const sameDirEventsUrl = window.location.protocol === 'file:'
         ? null
         : new URL('events.json', window.location.href).toString();
@@ -276,12 +273,6 @@
           const props = info.event.extendedProps;
           const thumbnail = props.thumbnail;
           const title = info.event.title;
-          const start = info.event.start;
-
-          // format time as h:mm am/pm
-          const timeStr = start
-            ? start.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
-            : '';
 
           // build color palette from css custom properties
           const palette =
@@ -316,15 +307,6 @@
           titleEl.className = 'fr-event-title';
           titleEl.textContent = title;
           container.appendChild(titleEl);
-
-          // add time text if available
-          if (timeStr)
-          {
-            const timeEl = document.createElement('div');
-            timeEl.className = 'fr-event-time';
-            timeEl.textContent = timeStr;
-            container.appendChild(timeEl);
-          }
 
           // return dom nodes for fullcalendar to render
           return { domNodes: [container] };
