@@ -26,7 +26,7 @@ If no query param is provided, `init.html` will try (in order):
 1. `?events=...`
 2. `events.json` next to `init.html` (same directory)
 3. A hardcoded fallback raw URL for this repo:
-	 `https://raw.githubusercontent.com/Novakukla/FloridaRAMA-Calendar/main/events.json`
+	`https://raw.githubusercontent.com/Novakukla/FloridaRAMA-Calendar/refs/heads/main/events.json`
 
 ## Local setup (dev machine)
 
