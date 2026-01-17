@@ -33,11 +33,39 @@
       color: #333;
     }
 
-    #fr-events-calendar { max-width: 100%; margin: 0 auto; }
+    /* Prevent page overflow/scrollbars, but allow the calendar to manage its own scrolling */
+    html, body
+    {
+      height: 100%;
+      overflow: hidden;
+      -ms-overflow-style: none; /* IE/Edge legacy */
+      scrollbar-width: none; /* Firefox */
+    }
+
+    html::-webkit-scrollbar,
+    body::-webkit-scrollbar,
+    .fc-scroller::-webkit-scrollbar
+    {
+      width: 0;
+      height: 0;
+      display: none;
+    }
+
+    .fc-scroller
+    {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    #fr-events-calendar { max-width: 100%; margin: 0 auto; height: 100vh; }
 
     html,
     body,
     #fr-events-calendar{ height: 100%; }
+
+    /* Debug is off by default (public-facing) */
+    #fr-debug { display: none; }
+    .fr-debug-enabled #fr-debug { display: block; }
     /* --------------------------------------------------- */
 
     /* ======= styles for day cells / grid ======= */
@@ -199,16 +227,20 @@
       const calendarEl = document.getElementById('fr-events-calendar');
       const debugEl = document.getElementById('fr-debug');
 
+      const urlParams = new URLSearchParams(window.location.search);
+      const debugEnabled = urlParams.get('debug') === '1';
+      if (debugEnabled)
+      {
+        document.documentElement.classList.add('fr-debug-enabled');
+      }
+
       function setDebug(msg, isError = false)
       {
-        if (!debugEl) return;
+        if (!debugEnabled || !debugEl) return;
         debugEl.textContent = msg;
         debugEl.style.color = isError ? '#b00020' : '#333';
       }
 
-      setDebug('Loading calendar…');
-
-      const urlParams = new URLSearchParams(window.location.search);
       const eventsOverride = urlParams.get('events');
 
       const sameDirEventsUrl = window.location.protocol === 'file:'
@@ -254,7 +286,7 @@
       const calendar = new FullCalendar.Calendar(calendarEl,
       {
         initialView: 'dayGridMonth',
-        height: 'auto',
+        height: '100%',
         events: events,
 
         // open fareharbor or detail url in new tab
