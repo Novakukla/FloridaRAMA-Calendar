@@ -197,17 +197,41 @@
     {
       const calendarEl = document.getElementById('fr-events-calendar');
 
+      // You can override the source by adding ?events=<raw_json_url> to the iframe src.
+      const urlParams = new URLSearchParams(window.location.search);
+      const eventsOverride = urlParams.get('events');
+
+      // If init.html and events.json are hosted side-by-side, this works without hardcoding the repo.
+      const sameDirEventsUrl = new URL('events.json', window.location.href).toString();
+
+      // Fallback: hardcoded raw GitHub URL for this repo.
+      const defaultEventsUrl = 'https://raw.githubusercontent.com/Novakukla/FloridaRAMA-Calendar/main/events.json';
+
+      const candidateEventUrls = [eventsOverride, sameDirEventsUrl, defaultEventsUrl].filter(Boolean);
+      const uniqueCandidateEventUrls = [...new Set(candidateEventUrls)];
+
       // array for events loaded from json
       let events = [];
-      try
+      let loadedFrom = null;
+      for (const candidateUrl of uniqueCandidateEventUrls)
       {
-        // fetch events json from github
-        const res = await fetch('https://raw.githubusercontent.com/Novakukla/FloridaRAMA-Calendar/refs/heads/main/events.json');
-        events = await res.json();
+        try
+        {
+          const res = await fetch(candidateUrl, { cache: 'no-store' });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          events = await res.json();
+          loadedFrom = candidateUrl;
+          break;
+        }
+        catch (err)
+        {
+          console.warn(`Failed to load events.json from ${candidateUrl}`, err);
+        }
       }
-      catch (err)
+
+      if (!loadedFrom)
       {
-        console.error('Error loading events.json', err);
+        console.error('Error loading events.json (all sources failed)', { tried: uniqueCandidateEventUrls });
       }
 
       // create calendar instance

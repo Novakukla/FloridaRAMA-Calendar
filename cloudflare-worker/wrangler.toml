@@ -1,0 +1,20 @@
+name = "floridarama-fareharbor-webhook"
+main = "src/index.js"
+compatibility_date = "2025-01-15"
+
+# Optional: tighten CORS by restricting origins if you ever add GET endpoints.
+
+[vars]
+# GitHub repo to dispatch the workflow in
+GITHUB_OWNER = "Novakukla"
+GITHUB_REPO = "FloridaRAMA-Calendar"
+
+# Workflow file name in .github/workflows
+GITHUB_WORKFLOW_FILE = "sync-fareharbor-events.yml"
+
+# Branch/ref for workflow_dispatch (usually main)
+GITHUB_REF = "main"
+
+# Webhook auth mode:
+# - easiest: set WEBHOOK_TOKEN secret and require Authorization: Bearer <token>
+# - optional: set WEBHOOK_HMAC_SECRET and provide X-Signature-256 header (hex or sha256=<hex>)
