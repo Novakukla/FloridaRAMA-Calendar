@@ -1,4 +1,4 @@
-# FloridaRAMA Calendar
+# FloridaRAMA Events Calendar
 
 Live events calendar for FloridaRAMA, hosted on GitHub Pages and auto-updated with GitHub Actions.
 
@@ -17,7 +17,7 @@ This project keeps the site fast, simple, and low-maintenance:
 
 ## Live Page
 
-- `https://<username>.github.io/FloridaRAMA-Calendar/init.html`
+- `https://<username>.github.io/FloridaRAMA-events-calendar/init.html`
 
 ## Hosting (GitHub Pages)
 
