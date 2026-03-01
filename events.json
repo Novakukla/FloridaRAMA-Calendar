@@ -1,16 +1,16 @@
 [
   {
-    "title": "Sensory Saturdays",
-    "start": "2026-02-28T10:00:00",
-    "end": "2026-02-28T12:00:00",
-    "url": "https://fareharbor.com/embeds/book/floridarama/items/639860/?full-items=yes&flow=1415736",
-    "thumbnail": "https://cdn.filestackcontent.com/dsGyc5CVSv23QYBAgV7n/convert?cache=true&compress=true&quality=90&format=webp&rotate=exif&w=1000&fit=max"
-  },
-  {
-    "title": "ARTofficial Intelligence",
+    "title": "FloridaRAMA Gallery Presents  ARTofficial Intelligence: The St. Pete Robot Exchange 12",
     "start": "2026-03-06T18:00:00",
     "end": "2026-03-06T22:00:00",
-    "url": "https://fareharbor.com/embeds/book/floridarama/items/705990/?full-items=yes&flow=1438415",
+    "url": "https://fareharbor.com/embeds/book/floridarama/items/705990/availability/2013498984/book/?full-items=yes&flow=1438415",
     "thumbnail": "https://cdn.filestackcontent.com/Hd1t3EwSRCrHgnOZY5ZT/convert?cache=true&compress=true&quality=90&format=webp&rotate=exif&w=1000&fit=max"
+  },
+  {
+    "title": "Sensory Saturdays",
+    "start": "2026-03-28T10:00:00",
+    "end": "2026-03-28T20:00:00",
+    "url": "https://fareharbor.com/embeds/book/floridarama/items/639860/availability/1770373768/book/?full-items=yes&flow=1438415",
+    "thumbnail": "https://cdn.filestackcontent.com/wJrCvHSe7M3hhzHuSQQO/convert?cache=true&compress=true&quality=90&format=webp&rotate=exif&w=1000&fit=max"
   }
 ]
